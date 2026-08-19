@@ -107,10 +107,10 @@
   <script type="text/babel">
     const { useState, useEffect, useRef, useCallback } = React;
 
-    // ─── CONSTANTS ───────────────────────────────────────────────────────────
+    // ─── CONSTANTS & DESTINATIONS ──────────────────────────────────────────────
     const CURRENCIES = [
-      { code:'INR', name:'Indian Rupee',        symbol:'₹',   flag:'🇮🇳' },
       { code:'USD', name:'US Dollar',           symbol:'$',   flag:'🇺🇸' },
+      { code:'INR', name:'Indian Rupee',        symbol:'₹',   flag:'🇮🇳' },
       { code:'EUR', name:'Euro',                symbol:'€',   flag:'🇪🇺' },
       { code:'GBP', name:'British Pound',       symbol:'£',   flag:'🇬🇧' },
       { code:'JPY', name:'Japanese Yen',        symbol:'¥',   flag:'🇯🇵' },
@@ -121,12 +121,22 @@
       { code:'CAD', name:'Canadian Dollar',     symbol:'C$',  flag:'🇨🇦' },
     ];
 
+    const DESTINATIONS = [
+      { code:'IN', country:'India',     currency:'INR', flag:'🇮🇳' },
+      { code:'JP', country:'Japan',     currency:'JPY', flag:'🇯🇵' },
+      { code:'TH', country:'Thailand',  currency:'THB', flag:'🇹🇭' },
+      { code:'SG', country:'Singapore', currency:'SGD', flag:'🇸🇬' },
+      { code:'AE', country:'UAE',       currency:'AED', flag:'🇦🇪' },
+      { code:'US', country:'USA',       currency:'USD', flag:'🇺🇸' },
+      { code:'GB', country:'UK',        currency:'GBP', flag:'🇬🇧' },
+    ];
+
     const FALLBACK = { USD:1,INR:83.5,JPY:151.2,EUR:0.92,GBP:0.79,THB:36.2,SGD:1.35,AED:3.67,AUD:1.52,CAD:1.36 };
     let FX = { ...FALLBACK };
 
     const SAMPLE_QRS = [
+      { label:'Mumbai UPI 🇮🇳',   flag:'🇮🇳', cur:'INR', amt:1000,  payload:'upi://pay?pa=mumbaimango@upi&pn=Mumbai%20Street%20Cafe&am=1000&cu=INR&tn=Dinner' },
       { label:'Tokyo Ramen 🇯🇵', flag:'🇯🇵', cur:'JPY', amt:10000, payload:'https://payqr.jp/pay?m=Tokyo%20Ramen&amt=10000&cur=JPY' },
-      { label:'Mumbai UPI 🇮🇳',   flag:'🇮🇳', cur:'INR', amt:1000,  payload:'upi://pay?pa=mumbaimango@upi&pn=Mumbai%20Mango&am=1000&cu=INR&tn=Dinner' },
       { label:'Bangkok Market 🇹🇭',flag:'🇹🇭', cur:'THB', amt:850,  payload:'https://promptpay.io/pay?m=Bangkok%20Night%20Market&amt=850&cur=THB' },
       { label:'Marina Hawker 🇸🇬', flag:'🇸🇬', cur:'SGD', amt:45,   payload:'https://sgqr.nets.com.sg/pay?m=Marina%20Bay%20Hawker&amt=45.00&cur=SGD' },
     ];
@@ -139,9 +149,9 @@
       } catch(_) {}
     };
 
-    // Calculate exact cross-rate between ANY two currencies
+    // Exact cross-rate calculation between ANY two currencies
     const rate = (fromCode, toCode) => {
-      if (fromCode === toCode) return 1.0;
+      if (!fromCode || !toCode || fromCode === toCode) return 1.0;
       const fromUSD = FX[fromCode] || FALLBACK[fromCode] || 1;
       const toUSD = FX[toCode] || FALLBACK[toCode] || 1;
       return parseFloat((toUSD / fromUSD).toFixed(6));
@@ -153,10 +163,11 @@
     };
 
     const fmt = (amount, code) => {
+      if (amount === undefined || amount === null || isNaN(amount)) amount = 0;
       const c = CURRENCIES.find(x => x.code === code);
-      const sym = c ? c.symbol : code;
+      const sym = c ? c.symbol : (code || '$');
       const decimals = code === 'JPY' ? 0 : 2;
-      return sym + new Intl.NumberFormat('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(amount);
+      return sym + new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(amount);
     };
 
     const timeAgo = (iso) => {
@@ -164,31 +175,33 @@
       if (diff < 60) return 'Just now';
       if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
       if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
-      return new Date(iso).toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+      return new Date(iso).toLocaleDateString('en-US', { day:'numeric', month:'short' });
     };
 
     // ─── STORAGE ─────────────────────────────────────────────────────────────
     const ls = (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } };
     const ss = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
-    const defaultWallet = () => ({
-      balance: 50000,
-      dailyLimit: 75000,
-      spentToday: 6096.5,
-      savedFx: 1240.8,
-      holdings: [
-        { currency:'JPY', amount:50000, flag:'🇯🇵' },
-        { currency:'THB', amount:5000,  flag:'🇹🇭' },
-        { currency:'USD', amount:500,   flag:'🇺🇸' },
-        { currency:'EUR', amount:250,   flag:'🇪🇺' },
-      ]
-    });
+    const defaultWallet = (homeCur = 'USD') => {
+      const isUSD = homeCur === 'USD';
+      return {
+        balance: isUSD ? 600 : 50000,
+        dailyLimit: isUSD ? 1000 : 75000,
+        spentToday: isUSD ? 75 : 6096.5,
+        savedFx: isUSD ? 18.5 : 1240.8,
+        holdings: [
+          { currency:'INR', amount:10000, flag:'🇮🇳' },
+          { currency:'JPY', amount:50000, flag:'🇯🇵' },
+          { currency:'THB', amount:5000,  flag:'🇹🇭' },
+          { currency:'EUR', amount:250,   flag:'🇪🇺' },
+        ]
+      };
+    };
 
     const defaultScans = () => {
       const s = [
-        { id:'s1', ts: new Date(Date.now()-3600000).toISOString(), merchant:'Tokyo Ramen', country:'Japan', flag:'🇯🇵', network:'PayPay / Japan QR', origCur:'JPY', origAmt:1200, homeCur:'INR', converted:684, fxFee:8.55, svcFee:30, total:722.55, rate:0.57 },
-        { id:'s2', ts: new Date(Date.now()-28800000).toISOString(), merchant:'7-Eleven Shibuya', country:'Japan', flag:'🇯🇵', network:'Japan PayQR', origCur:'JPY', origAmt:450, homeCur:'INR', converted:256.5, fxFee:3.2, svcFee:30, total:289.7, rate:0.57 },
-        { id:'s3', ts: new Date(Date.now()-86400000).toISOString(), merchant:'Bangkok Night Market', country:'Thailand', flag:'🇹🇭', network:'Thai PromptPay', origCur:'THB', origAmt:850, homeCur:'INR', converted:2022.5, fxFee:25.28, svcFee:30, total:2077.78, rate:2.38 },
+        { id:'s1', ts: new Date(Date.now()-3600000).toISOString(), merchant:'Mumbai Cafe', country:'India', flag:'🇮🇳', network:'UPI', origCur:'INR', origAmt:1000, homeCur:'USD', converted:11.98, fxFee:0.15, svcFee:0.36, total:12.49, rate:0.012 },
+        { id:'s2', ts: new Date(Date.now()-28800000).toISOString(), merchant:'Tokyo Ramen', country:'Japan', flag:'🇯🇵', network:'PayPay QR', origCur:'JPY', origAmt:4500, homeCur:'USD', converted:29.76, fxFee:0.37, svcFee:0.36, total:30.49, rate:0.0066 },
       ];
       ss('gp_scans', s);
       return s;
@@ -200,7 +213,7 @@
       if (t.toLowerCase().startsWith('upi://pay')) {
         try {
           const u = new URL(t), p = u.searchParams;
-          return { type:'UPI', network:'UPI — Unified Payments Interface', merchant: p.get('pn') ? decodeURIComponent(p.get('pn')) : null, merchantId: p.get('pa') ? decodeURIComponent(p.get('pa')) : null, country:'India', flag:'🇮🇳', currency:(p.get('cu')||'INR').toUpperCase(), amount: p.get('am') ? parseFloat(p.get('am')) : null, raw:t };
+          return { type:'UPI', network:'UPI — Indian Payment Network', merchant: p.get('pn') ? decodeURIComponent(p.get('pn')) : null, merchantId: p.get('pa') ? decodeURIComponent(p.get('pa')) : null, country:'India', flag:'🇮🇳', currency:(p.get('cu')||'INR').toUpperCase(), amount: p.get('am') ? parseFloat(p.get('am')) : null, raw:t };
         } catch(_) {}
       }
       if (t.startsWith('http://') || t.startsWith('https://')) {
@@ -222,7 +235,7 @@
       return { type:'UNKNOWN', network:'Unknown QR Code', merchant:null, merchantId:null, country:null, flag:null, currency:null, amount:null, raw:t };
     };
 
-    // ─── MODALS & CONVERTER DRAWERS ───────────────────────────────────────────
+    // ─── MODALS ───────────────────────────────────────────────────────────────
     function Modal({ children, onClose }) {
       return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -235,8 +248,9 @@
     }
 
     function TopUpModal({ profile, wallet, onClose, onTopUp }) {
-      const [amount, setAmount] = useState('10000');
-      const presets = ['5000','10000','25000','50000'];
+      const isUSD = profile.homeCurrency === 'USD';
+      const presets = isUSD ? ['100','250','500','1000'] : ['5000','10000','25000','50000'];
+      const [amount, setAmount] = useState(presets[1]);
       return (
         <Modal onClose={onClose}>
           <div className="p-6 space-y-5">
@@ -252,7 +266,7 @@
               ))}
             </div>
             <div>
-              <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block mb-1">Custom Amount</label>
+              <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block mb-1">Custom Amount ({profile.homeCurrency})</label>
               <input type="number" value={amount} onChange={e=>setAmount(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface-container-low text-xl font-black text-center text-primary" />
             </div>
             <div className="flex gap-3">
@@ -264,10 +278,10 @@
       );
     }
 
-    // ─── PROPER MULTI-CURRENCY CONVERTER MODAL ────────────────────────────────
+    // ─── DYNAMIC MULTI-CURRENCY CONVERTER MODAL ───────────────────────────────
     function FxCalcModal({ profile, wallet, onExchangeInWallet, onClose }) {
       const [amount, setAmount] = useState('1000');
-      const [from, setFrom] = useState('JPY');
+      const [from, setFrom] = useState('INR');
       const [to, setTo] = useState(profile.homeCurrency);
       const [isWalletExchange, setIsWalletExchange] = useState(false);
 
@@ -302,7 +316,6 @@
               <button onClick={onClose} className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-outline"><span className="material-symbols-outlined text-lg">close</span></button>
             </div>
 
-            {/* Mode Switcher */}
             <div className="flex bg-surface-container p-1 rounded-xl text-xs font-bold">
               <button onClick={()=>setIsWalletExchange(false)} className={`flex-1 py-2 rounded-lg transition ${!isWalletExchange?'bg-white shadow text-secondary':'text-on-surface-variant'}`}>
                 Calculator Only
@@ -312,11 +325,10 @@
               </button>
             </div>
 
-            {/* From Currency Block */}
             <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant space-y-2">
               <div className="flex justify-between items-center text-xs text-on-surface-variant font-semibold">
-                <span>You Convert From</span>
-                <span>Flag: {fromCurrObj?.flag}</span>
+                <span>Convert From</span>
+                <span>{fromCurrObj?.flag} {fromCurrObj?.name}</span>
               </div>
               <div className="flex gap-2">
                 <input
@@ -332,18 +344,16 @@
               </div>
             </div>
 
-            {/* Swap Button Divider */}
             <div className="flex items-center justify-center -my-2 relative z-10">
               <button onClick={handleSwap} className="w-10 h-10 rounded-full bg-secondary text-white shadow-lg flex items-center justify-center hover:bg-blue-700 active:scale-90 transition">
                 <span className="material-symbols-outlined text-lg">swap_vert</span>
               </button>
             </div>
 
-            {/* To Currency Block */}
             <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant space-y-2">
               <div className="flex justify-between items-center text-xs text-on-surface-variant font-semibold">
-                <span>You Receive To</span>
-                <span>Flag: {toCurrObj?.flag}</span>
+                <span>Receive In</span>
+                <span>{toCurrObj?.flag} {toCurrObj?.name}</span>
               </div>
               <div className="flex gap-2">
                 <div className="flex-1 px-4 py-3.5 rounded-xl border border-outline-variant bg-white text-xl font-black text-secondary">
@@ -355,29 +365,28 @@
               </div>
             </div>
 
-            {/* Live Exchange Rate Card */}
             <div className="bg-surface-container rounded-2xl p-4 space-y-2 text-xs">
               <div className="flex justify-between items-center font-bold text-primary">
-                <span>Direct Rate</span>
+                <span>Exchange Rate</span>
                 <span>1 {from} = {fmt(currentRate, to)}</span>
               </div>
               <div className="flex justify-between items-center text-on-surface-variant">
-                <span>Reverse Rate</span>
+                <span>Inverse Rate</span>
                 <span>1 {to} = {fmt(inverseRate, from)}</span>
               </div>
               <div className="flex justify-between items-center text-emerald-700 font-semibold border-t border-surface-variant pt-2">
-                <span>Mid-Market FX Fee</span>
-                <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">0% Markup Applied</span>
+                <span>Mid-Market Guarantee</span>
+                <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">0% Hidden FX Spread</span>
               </div>
             </div>
 
             {isWalletExchange ? (
               <button onClick={handleConfirmExchange} className="w-full py-4 btn-primary text-sm flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-lg">published_with_changes</span>
-                Exchange {fmt(parsedAmt, from)} → {fmt(convertedResult, to)} in Wallet
+                Exchange {fmt(parsedAmt, from)} → {fmt(convertedResult, to)}
               </button>
             ) : (
-              <button onClick={onClose} className="w-full py-3.5 btn-ghost text-sm">Close Converter</button>
+              <button onClick={onClose} className="w-full py-3.5 btn-ghost text-sm">Done</button>
             )}
           </div>
         </Modal>
@@ -388,11 +397,11 @@
     function LoginScreen({ onLogin }) {
       const [name, setName] = useState('');
       const [email, setEmail] = useState('');
-      const [currency, setCurrency] = useState('INR');
+      const [currency, setCurrency] = useState('USD');
       const submit = (e) => {
         e.preventDefault();
         if (!name.trim()) return;
-        onLogin({ name: name.trim(), email: email.trim(), homeCurrency: currency, countryFlag: CURRENCIES.find(c=>c.code===currency)?.flag||'🌍', isLoggedIn:true });
+        onLogin({ name: name.trim(), email: email.trim(), homeCurrency: currency, countryFlag: CURRENCIES.find(c=>c.code===currency)?.flag||'🇺🇸', isLoggedIn:true, activeDestination:'IN' });
       };
       return (
         <div className="min-h-screen bg-dot-grid flex flex-col items-center justify-center px-5 py-12 relative overflow-hidden">
@@ -418,27 +427,27 @@
             <form onSubmit={submit} className="bg-white rounded-3xl p-6 shadow-xl shadow-slate-900/8 border border-outline-variant space-y-4">
               <div>
                 <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block mb-1.5">Your Name</label>
-                <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Nikhil" required className="w-full px-4 py-3.5 rounded-2xl bg-surface-container-low border border-outline-variant text-sm font-bold text-primary transition" />
+                <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Alex" required className="w-full px-4 py-3.5 rounded-2xl bg-surface-container-low border border-outline-variant text-sm font-bold text-primary transition" />
               </div>
               <div>
                 <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block mb-1.5">Email (optional)</label>
-                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="nikhil@email.com" className="w-full px-4 py-3.5 rounded-2xl bg-surface-container-low border border-outline-variant text-sm font-bold text-primary transition" />
+                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="alex@globepay.com" className="w-full px-4 py-3.5 rounded-2xl bg-surface-container-low border border-outline-variant text-sm font-bold text-primary transition" />
               </div>
               <div>
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block mb-1.5">Home Currency</label>
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block mb-1.5">Your Home Base Currency</label>
                 <select value={currency} onChange={e=>setCurrency(e.target.value)} className="w-full px-4 py-3.5 rounded-2xl bg-surface-container-low border border-outline-variant text-sm font-extrabold text-primary transition">
                   {CURRENCIES.map(c=><option key={c.code} value={c.code}>{c.flag} {c.code} ({c.symbol}) — {c.name}</option>)}
                 </select>
               </div>
               <button type="submit" className="w-full py-4 btn-primary text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 mt-1">
                 <span className="material-symbols-outlined text-lg">account_balance_wallet</span>
-                Get Started
+                Sign In to Travel Wallet
               </button>
             </form>
 
             <p className="text-center text-[11px] text-outline flex items-center justify-center gap-1.5">
               <span className="material-symbols-outlined text-sm">lock</span>
-              No real payments · 256-bit encrypted storage
+              Protected by 256-bit Bank Grade Encryption
             </p>
           </div>
         </div>
@@ -459,8 +468,8 @@
                 <span className="material-symbols-outlined text-blue-300 text-xl filled">account_balance_wallet</span>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Travel Wallet</p>
-                <p className="text-xs font-semibold text-slate-200">{profile.name}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">GlobePay Travel Wallet</p>
+                <p className="text-xs font-semibold text-slate-200">{profile.name} ({profile.homeCurrency})</p>
               </div>
             </div>
             <button onClick={onOpenFx} className="flex items-center gap-1.5 bg-white/12 hover:bg-white/20 border border-white/15 text-white text-[10px] font-bold px-2.5 py-1 rounded-full transition">
@@ -470,7 +479,7 @@
           </div>
 
           <div className="relative z-10">
-            <p className="text-xs text-slate-400 font-medium mb-0.5">Available Balance</p>
+            <p className="text-xs text-slate-400 font-medium mb-0.5">Available Balance ({profile.homeCurrency})</p>
             <div className="text-4xl font-black tracking-tight">{fmt(wallet.balance, profile.homeCurrency)}</div>
           </div>
 
@@ -493,7 +502,7 @@
               <div key={h.currency} className="bg-white/8 rounded-xl p-2.5 border border-white/8 text-center">
                 <div className="text-base">{h.flag}</div>
                 <div className="text-[10px] text-slate-400 font-semibold mt-0.5">{h.currency}</div>
-                <div className="text-[11px] font-black text-white">{h.currency === 'JPY' ? `¥${(h.amount/1000).toFixed(0)}k` : fmt(h.amount, h.currency).replace(/[^0-9.,]/g,'').slice(0,5)}</div>
+                <div className="text-[11px] font-black text-white">{fmt(h.amount, h.currency)}</div>
               </div>
             ))}
           </div>
@@ -511,9 +520,10 @@
       );
     }
 
-    // ─── STATS ROW ────────────────────────────────────────────────────────────
+    // ─── DYNAMIC STATS ROW ───────────────────────────────────────────────────
     function StatsRow({ profile, wallet, onCalc }) {
-      const fxRate = rate('JPY', profile.homeCurrency);
+      const travelCur = profile.homeCurrency === 'USD' ? 'INR' : 'USD';
+      const fxRate = rate(travelCur, profile.homeCurrency);
       return (
         <div className="grid grid-cols-2 gap-3 anim-fade-up">
           <div className="card p-4 space-y-1">
@@ -529,8 +539,8 @@
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant">FX Converter</span>
               <span className="material-symbols-outlined text-lg text-secondary">currency_exchange</span>
             </div>
-            <div className="text-base font-black text-secondary">JPY → {profile.homeCurrency}</div>
-            <div className="text-[11px] font-semibold text-on-surface-variant">1 JPY ≈ {fmt(fxRate, profile.homeCurrency)}</div>
+            <div className="text-base font-black text-secondary">{travelCur} → {profile.homeCurrency}</div>
+            <div className="text-[11px] font-semibold text-on-surface-variant">1 {travelCur} = {fmt(fxRate, profile.homeCurrency)}</div>
           </button>
         </div>
       );
@@ -561,7 +571,7 @@
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="font-bold text-sm text-primary">{fmt(s.origAmt, s.origCur)}</p>
-                  <p className="text-[11px] font-semibold text-secondary">≈ {fmt(s.total, profile.homeCurrency)}</p>
+                  <p className="text-[11px] font-bold text-secondary">≈ {fmt(s.total, profile.homeCurrency)}</p>
                 </div>
               </div>
             ))}
@@ -662,7 +672,7 @@
                 <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-4">
                   <span className="bg-black/50 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-ring block"></span>
-                    {facing==='environment'?'Rear':'Front'} Camera Active
+                    {facing==='environment'?'Rear Camera':'Front Camera'} Active
                   </span>
                 </div>
               </>
@@ -671,7 +681,7 @@
             {camState==='INIT' && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white z-20">
                 <div className="w-10 h-10 border-3 border-secondary border-t-transparent rounded-full animate-spin" style={{borderWidth:'3px'}}></div>
-                <p className="text-xs font-medium opacity-70">Starting camera…</p>
+                <p className="text-xs font-medium opacity-70">Starting rear camera…</p>
               </div>
             )}
 
@@ -686,7 +696,7 @@
 
           <div className="flex items-center justify-center gap-2.5 flex-wrap">
             <button onClick={()=>setFacing(f=>f==='environment'?'user':'environment')} className="flex items-center gap-1.5 px-4 py-2.5 bg-primary text-white text-xs font-bold rounded-2xl shadow active:scale-95 transition">
-              <span className="material-symbols-outlined text-base">cameraswitch</span>Flip
+              <span className="material-symbols-outlined text-base">cameraswitch</span>Flip Cam
             </button>
             <label className="flex items-center gap-1.5 px-4 py-2.5 card text-on-surface text-xs font-bold cursor-pointer active:scale-95 transition">
               <span className="material-symbols-outlined text-base">image</span>Upload Image
@@ -720,12 +730,18 @@
       const [amount, setAmount] = useState(payload.amount ? String(payload.amount) : '');
       const isPayment = payload.type !== 'UNKNOWN';
       const parsed = parseFloat(amount) || 0;
-      const fxRate = payload.currency ? rate(payload.currency, profile.homeCurrency) : 1;
+
+      // Merchant currency from payload (e.g. INR ₹)
+      const merchantCur = payload.currency || 'INR';
+      // User's home currency (e.g. USD $)
+      const homeCur = profile.homeCurrency || 'USD';
+
+      const fxRate = rate(merchantCur, homeCur);
       const baseConv = parsed * fxRate;
-      const sameCur = payload.currency === profile.homeCurrency;
+      const sameCur = merchantCur === homeCur;
       const fxFee = sameCur ? 0 : baseConv * 0.0125;
-      const svcFee = sameCur ? 0 : 30;
-      const total = baseConv + fxFee + svcFee;
+      const svcFee = sameCur ? 0 : (homeCur === 'USD' ? 0.36 : 30);
+      const totalInHomeCur = baseConv + fxFee + svcFee;
 
       return (
         <div className="max-w-md mx-auto space-y-4 anim-slide-up">
@@ -753,8 +769,8 @@
                   <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-2xl flex-shrink-0">{payload.flag||'🌐'}</div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${payload.type==='UPI'?'bg-orange-50 text-orange-600':'bg-blue-50 text-blue-600'}`}>
-                        {payload.type==='UPI'?'🇮🇳 UPI':'Payment QR'}
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${payload.type==='UPI'?'bg-orange-50 text-orange-600 border border-orange-200':'bg-blue-50 text-blue-600 border border-blue-200'}`}>
+                        {payload.type==='UPI'?'🇮🇳 Indian UPI QR':'International QR'}
                       </span>
                     </div>
                     <h2 className="font-black text-primary text-base">{payload.merchant||'Merchant'}</h2>
@@ -766,11 +782,11 @@
 
               <div className="card p-5 space-y-3">
                 <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block">
-                  {payload.amount ? `Amount encoded in QR (${payload.currency})` : `Enter payment amount (${payload.currency||'?'})`}
+                  Merchant Amount ({merchantCur})
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-black text-outline">
-                    {CURRENCIES.find(c=>c.code===payload.currency)?.symbol || payload.currency}
+                    {CURRENCIES.find(c=>c.code===merchantCur)?.symbol || merchantCur}
                   </span>
                   <input
                     type="number"
@@ -784,28 +800,31 @@
 
               {parsed > 0 && (
                 <div className="card p-5 space-y-3 anim-fade-up">
-                  <h3 className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant">Conversion Preview</h3>
-                  <div className="flex items-center justify-between">
-                    <div className="text-center">
-                      <p className="text-xs text-on-surface-variant">You pay</p>
-                      <p className="text-xl font-black text-primary">{fmt(parsed, payload.currency)}</p>
+                  <h3 className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant">Live Conversion Preview</h3>
+                  
+                  {/* Visual Conversion Box */}
+                  <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant flex items-center justify-between">
+                    <div className="text-left">
+                      <p className="text-[11px] text-on-surface-variant font-medium">Merchant Receives</p>
+                      <p className="text-lg font-black text-primary">{fmt(parsed, merchantCur)}</p>
                     </div>
                     <span className="material-symbols-outlined text-secondary text-2xl">arrow_forward</span>
-                    <div className="text-center">
-                      <p className="text-xs text-on-surface-variant">Est. cost</p>
-                      <p className="text-xl font-black text-secondary">{fmt(total, profile.homeCurrency)}</p>
+                    <div className="text-right">
+                      <p className="text-[11px] font-bold text-secondary uppercase">You Pay ({homeCur})</p>
+                      <p className="text-2xl font-black text-secondary">{fmt(totalInHomeCur, homeCur)}</p>
                     </div>
                   </div>
+
                   <div className="bg-surface-container-low rounded-xl p-3 space-y-1.5 text-xs">
-                    <div className="flex justify-between text-on-surface-variant"><span>Exchange rate</span><span className="font-bold text-primary">1 {payload.currency} = {fmt(fxRate, profile.homeCurrency)}</span></div>
-                    {!sameCur && <><div className="flex justify-between text-on-surface-variant"><span>FX fee (1.25%)</span><span>{fmt(fxFee, profile.homeCurrency)}</span></div>
-                    <div className="flex justify-between text-on-surface-variant"><span>Service fee</span><span>{fmt(svcFee, profile.homeCurrency)}</span></div></>}
-                    <div className="flex justify-between font-extrabold text-primary border-t border-surface-variant pt-1.5"><span>Total estimated</span><span className="text-secondary">{fmt(total, profile.homeCurrency)}</span></div>
+                    <div className="flex justify-between text-on-surface-variant"><span>Exchange Rate</span><span className="font-bold text-primary">1 {merchantCur} = {fmt(fxRate, homeCur)}</span></div>
+                    {!sameCur && <><div className="flex justify-between text-on-surface-variant"><span>Est. FX Fee (1.25%)</span><span>{fmt(fxFee, homeCur)}</span></div>
+                    <div className="flex justify-between text-on-surface-variant"><span>Est. Service Fee</span><span>{fmt(svcFee, homeCur)}</span></div></>}
+                    <div className="flex justify-between font-extrabold text-primary border-t border-surface-variant pt-1.5 text-sm"><span>Total Estimated Cost</span><span className="text-secondary">{fmt(totalInHomeCur, homeCur)}</span></div>
                   </div>
                 </div>
               )}
 
-              <button disabled={!parsed} onClick={()=>onConfirm(parsed, {fxRate, baseConv, fxFee, svcFee, total})} className="w-full py-4 btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              <button disabled={!parsed} onClick={()=>onConfirm(parsed, {fxRate, baseConv, fxFee, svcFee, total: totalInHomeCur, merchantCur, homeCur})} className="w-full py-4 btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-lg">check_circle</span>
                 Confirm & View Full Breakdown
               </button>
@@ -817,6 +836,9 @@
 
     // ─── PAYMENT DETAILS SCREEN ───────────────────────────────────────────────
     function PaymentDetailsScreen({ payload, amount, calc, profile, onDone, onScanAgain }) {
+      const merchantCur = payload.currency || 'INR';
+      const homeCur = profile.homeCurrency || 'USD';
+
       return (
         <div className="max-w-md mx-auto space-y-4 anim-slide-up">
           <div className="flex items-center gap-3">
@@ -845,26 +867,26 @@
 
             <div className="bg-surface-container-low rounded-2xl p-4 space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-on-surface-variant">Merchant requests</span>
-                <span className="font-extrabold text-primary text-base">{fmt(amount, payload.currency)}</span>
+                <span className="text-on-surface-variant">Merchant Requests</span>
+                <span className="font-extrabold text-primary text-base">{fmt(amount, merchantCur)}</span>
               </div>
               <div className="border-t border-surface-variant pt-3">
                 <p className="text-[11px] font-bold text-secondary uppercase tracking-wide mb-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">autorenew</span> Your estimated cost
+                  <span className="material-symbols-outlined text-sm">autorenew</span> Your Estimated Cost ({homeCur})
                 </p>
-                <p className="text-3xl font-black text-secondary">{fmt(calc.total, profile.homeCurrency)}</p>
+                <p className="text-3xl font-black text-secondary">{fmt(calc.total, homeCur)}</p>
               </div>
             </div>
           </div>
 
           <div className="card p-5 space-y-3">
-            <h3 className="font-extrabold text-primary text-sm">Fee Breakdown</h3>
+            <h3 className="font-extrabold text-primary text-sm">Fee Breakdown ({homeCur})</h3>
             {[
-              ['Original amount', `${fmt(amount, payload.currency)}`],
-              ['Exchange rate', `1 ${payload.currency} = ${fmt(calc.fxRate, profile.homeCurrency)}`],
-              ['Converted', fmt(calc.baseConv, profile.homeCurrency)],
-              ['FX fee (1.25%)', fmt(calc.fxFee, profile.homeCurrency)],
-              ['Service fee', fmt(calc.svcFee, profile.homeCurrency)],
+              ['Original Merchant Amount', fmt(amount, merchantCur)],
+              ['Live Exchange Rate', `1 ${merchantCur} = ${fmt(calc.fxRate, homeCur)}`],
+              ['Base Converted Cost', fmt(calc.baseConv, homeCur)],
+              ['Est. FX Fee (1.25%)', fmt(calc.fxFee, homeCur)],
+              ['Est. Service Fee', fmt(calc.svcFee, homeCur)],
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between text-sm">
                 <span className="text-on-surface-variant">{label}</span>
@@ -872,16 +894,16 @@
               </div>
             ))}
             <div className="flex justify-between font-extrabold text-primary border-t border-surface-variant pt-3 text-base">
-              <span>Total Estimated</span>
-              <span className="text-secondary">{fmt(calc.total, profile.homeCurrency)}</span>
+              <span>Total Estimated Cost</span>
+              <span className="text-secondary">{fmt(calc.total, homeCur)}</span>
             </div>
           </div>
 
-          <p className="text-[11px] text-center text-outline px-4">Payment information only. GlobePay does not process transactions.</p>
+          <p className="text-[11px] text-center text-outline px-4">Payment information only. GlobePay does not process live bank transactions.</p>
 
           <div className="space-y-2.5 pb-2">
             <button onClick={onDone} className="w-full py-4 btn-primary text-sm flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined text-lg">check</span>Done — Save to History
+              <span className="material-symbols-outlined text-lg">check</span>Deduct & Save to Scan History
             </button>
             <button onClick={onScanAgain} className="w-full py-3.5 btn-ghost text-sm flex items-center justify-center gap-2">
               <span className="material-symbols-outlined text-base">qr_code_scanner</span>Scan Another QR
@@ -914,7 +936,7 @@
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="font-bold text-sm text-primary">{fmt(s.origAmt, s.origCur)}</p>
-                      <p className="text-[11px] font-semibold text-secondary">≈ {fmt(s.total, profile.homeCurrency)}</p>
+                      <p className="text-[11px] font-bold text-secondary">≈ {fmt(s.total, profile.homeCurrency)}</p>
                       <p className="text-[10px] text-on-surface-variant">Rate: {s.rate}</p>
                     </div>
                   </div>
@@ -988,7 +1010,7 @@
     // ─── MAIN APP ─────────────────────────────────────────────────────────────
     function App() {
       const [profile, setProfile] = useState(() => ls('gp_profile', null));
-      const [wallet, setWallet] = useState(() => ls('gp_wallet', defaultWallet()));
+      const [wallet, setWallet] = useState(() => ls('gp_wallet', profile ? defaultWallet(profile.homeCurrency) : defaultWallet('USD')));
       const [scans, setScans] = useState(() => ls('gp_scans', null) || defaultScans());
       const [tab, setTab] = useState('home');
 
@@ -1003,7 +1025,14 @@
 
       useEffect(() => { fetchFX(); }, []);
 
-      const handleLogin = (p) => { ss('gp_profile', p); setProfile(p); setTab('home'); };
+      const handleLogin = (p) => { 
+        ss('gp_profile', p); 
+        const w = defaultWallet(p.homeCurrency);
+        ss('gp_wallet', w);
+        setWallet(w);
+        setProfile(p); 
+        setTab('home'); 
+      };
 
       const handleTopUp = (amount) => {
         const w = { ...wallet, balance: wallet.balance + amount };
@@ -1017,7 +1046,6 @@
           return h;
         });
 
-        // Add to holdings if target currency was not in default list
         if (!updatedHoldings.some(h => h.currency === toCode)) {
           const flag = CURRENCIES.find(c => c.code === toCode)?.flag || '🌍';
           updatedHoldings.push({ currency: toCode, amount: toAmt, flag });
@@ -1040,7 +1068,7 @@
             country: decodedPayload.country || 'International',
             flag: decodedPayload.flag || '🌐',
             network: decodedPayload.network,
-            origCur: decodedPayload.currency || 'USD',
+            origCur: decodedPayload.currency || 'INR',
             origAmt: confirmedAmount,
             homeCur: profile.homeCurrency,
             converted: confirmedCalc.baseConv,
@@ -1069,6 +1097,8 @@
 
       if (!profile?.isLoggedIn) return <LoginScreen onLogin={handleLogin} />;
 
+      const activeDest = DESTINATIONS.find(d => d.code === profile.activeDestination) || DESTINATIONS[0];
+
       return (
         <div className="min-h-screen flex flex-col pb-20 md:pb-0">
           <header className="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-md border-b border-outline-variant">
@@ -1079,7 +1109,7 @@
               </button>
               <button onClick={()=>setShowSettings(true)} className="flex items-center gap-1.5 bg-surface-container border border-outline-variant px-3 py-1.5 rounded-full text-xs font-bold text-on-surface hover:bg-surface-container-high transition">
                 <span>{profile.countryFlag}</span>
-                <span className="text-primary">{profile.homeCurrency}</span>
+                <span className="text-primary font-black">{profile.homeCurrency}</span>
                 <span className="text-on-surface-variant font-normal hidden sm:block">· {profile.name}</span>
                 <span className="material-symbols-outlined text-base text-outline">expand_more</span>
               </button>
@@ -1090,26 +1120,33 @@
             <Modal onClose={()=>setShowSettings(false)}>
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-extrabold text-primary">Settings</h3>
+                  <h3 className="text-lg font-extrabold text-primary">Traveler Settings</h3>
                   <button onClick={()=>setShowSettings(false)} className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center"><span className="material-symbols-outlined text-lg text-outline">close</span></button>
                 </div>
                 <div>
-                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block mb-1.5">Display Name</label>
+                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block mb-1.5">Traveler Name</label>
                   <input type="text" defaultValue={profile.name} id="sName" className="w-full px-4 py-3 rounded-xl border border-outline-variant text-sm font-bold text-primary bg-surface-container-low" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block mb-1.5">Home Currency</label>
+                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block mb-1.5">Home Base Currency</label>
                   <select defaultValue={profile.homeCurrency} id="sCur" className="w-full px-4 py-3 rounded-xl border border-outline-variant text-sm font-extrabold text-primary bg-surface-container-low">
-                    {CURRENCIES.map(c=><option key={c.code} value={c.code}>{c.flag} {c.code} — {c.name}</option>)}
+                    {CURRENCIES.map(c=><option key={c.code} value={c.code}>{c.flag} {c.code} ({c.symbol}) — {c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant block mb-1.5">Current Destination Country</label>
+                  <select defaultValue={profile.activeDestination || 'IN'} id="sDest" className="w-full px-4 py-3 rounded-xl border border-outline-variant text-sm font-bold text-primary bg-surface-container-low">
+                    {DESTINATIONS.map(d=><option key={d.code} value={d.code}>{d.flag} {d.country} ({d.currency})</option>)}
                   </select>
                 </div>
                 <button onClick={()=>{
                   const n = document.getElementById('sName').value.trim();
                   const c = document.getElementById('sCur').value;
-                  const cf = CURRENCIES.find(x=>x.code===c)?.flag||'🌍';
-                  const p = {...profile, name:n||profile.name, homeCurrency:c, countryFlag:cf};
+                  const dest = document.getElementById('sDest').value;
+                  const cf = CURRENCIES.find(x=>x.code===c)?.flag||'🇺🇸';
+                  const p = {...profile, name:n||profile.name, homeCurrency:c, countryFlag:cf, activeDestination:dest};
                   ss('gp_profile',p); setProfile(p); setShowSettings(false);
-                }} className="w-full py-3.5 btn-primary text-sm">Save Changes</button>
+                }} className="w-full py-3.5 btn-primary text-sm">Save Preferences</button>
               </div>
             </Modal>
           )}
@@ -1120,6 +1157,18 @@
           <main className="pt-20 px-4 max-w-2xl mx-auto w-full flex-1 space-y-4 pb-4">
             {tab === 'home' && flowStage === 'idle' && (
               <>
+                {/* Header Greeting */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-black text-primary">Hello, {profile.name} 👋</h2>
+                    <p className="text-xs text-on-surface-variant">Home Currency: <span className="font-bold text-primary">{profile.homeCurrency} ({CURRENCIES.find(c=>c.code===profile.homeCurrency)?.symbol})</span></p>
+                  </div>
+                  <button onClick={()=>setShowSettings(true)} className="inline-flex items-center gap-1.5 bg-surface-container hover:bg-surface-container-high px-3 py-1.5 rounded-full border border-outline-variant text-xs font-bold text-on-surface transition">
+                    <span>{activeDest.flag}</span>
+                    <span>{activeDest.country}</span>
+                  </button>
+                </div>
+
                 <WalletCard profile={profile} wallet={wallet} onScan={()=>setTab('scan')} onTopUp={()=>setShowTopUp(true)} onOpenFx={()=>setShowFxCalc(true)} />
                 <StatsRow profile={profile} wallet={wallet} onCalc={()=>setShowFxCalc(true)} />
                 <ScanList scans={scans} profile={profile} onViewAll={()=>setTab('activity')} />
@@ -1135,7 +1184,7 @@
             )}
 
             {flowStage === 'confirmed' && decodedPayload && confirmedAmount && confirmedCalc && (
-              <PaymentDetailsScreen payload={decodedPayload} amount={confirmedAmount} calc={calc=>confirmedCalc} profile={profile} onDone={handleSaveScan} onScanAgain={handleScanAgain} />
+              <PaymentDetailsScreen payload={decodedPayload} amount={confirmedAmount} calc={confirmedCalc} profile={profile} onDone={handleSaveScan} onScanAgain={handleScanAgain} />
             )}
 
             {tab === 'activity' && flowStage === 'idle' && (
