@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>GlobePay - Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-container": "#0b1f33",
+                        "on-secondary-fixed": "#001a42",
+                        "on-error": "#ffffff",
+                        "on-tertiary-container": "#009a43",
+                        "surface-dim": "#d8dadd",
+                        "on-tertiary-fixed": "#002109",
+                        "surface-bright": "#f7f9fc",
+                        "tertiary": "#000601",
+                        "surface-tint": "#4e6077",
+                        "tertiary-fixed": "#7ffc97",
+                        "on-primary-fixed-variant": "#36485e",
+                        "secondary-container": "#2170e4",
+                        "primary-fixed": "#d1e4ff",
+                        "on-primary-container": "#7587a0",
+                        "on-secondary-fixed-variant": "#004395",
+                        "surface-variant": "#e0e3e6",
+                        "primary": "#00050e",
+                        "tertiary-fixed-dim": "#62df7d",
+                        "on-primary": "#ffffff",
+                        "on-background": "#191c1e",
+                        "surface-container-high": "#e6e8eb",
+                        "error": "#ba1a1a",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#eff1f4",
+                        "surface-container-low": "#f2f4f7",
+                        "secondary": "#0058be",
+                        "on-surface": "#191c1e",
+                        "on-secondary-container": "#fefcff",
+                        "primary-fixed-dim": "#b5c8e3",
+                        "surface-container": "#eceef1",
+                        "inverse-primary": "#b5c8e3",
+                        "surface-container-highest": "#e0e3e6",
+                        "on-primary-fixed": "#081d30",
+                        "outline-variant": "#c4c6cd",
+                        "background": "#f7f9fc",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface": "#f7f9fc",
+                        "error-container": "#ffdad6",
+                        "outline": "#74777d",
+                        "on-surface-variant": "#44474c",
+                        "on-tertiary-fixed-variant": "#005320",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "secondary-fixed": "#d8e2ff",
+                        "tertiary-container": "#00240a"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "container-max": "1200px",
+                        "xs": "4px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "sm": "12px",
+                        "lg": "40px",
+                        "base": "8px",
+                        "xl": "64px",
+                        "md": "24px",
+                        "safe": "env(safe-area-inset-bottom)"
+                    },
+                    fontFamily: {
+                        "headline-lg-mobile": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "disclaimer-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-lg-mobile": ["28px", { lineHeight: "36px", fontWeight: "600" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+                        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "600" }],
+                        "disclaimer-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "400" }],
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+                        "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface border-b border-outline-variant dark:border-outline">
+<div class="flex justify-between items-center h-16 px-margin-mobile w-full">
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors scale-95 duration-200 transition-transform text-primary dark:text-primary-fixed">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md-mobile text-primary dark:text-primary-fixed font-bold tracking-tight">GlobePay</h1>
+<div class="flex items-center">
+<span class="font-label-md text-label-md text-on-surface-variant bg-surface-container px-3 py-1 rounded-full">V1 Prototype</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-24 px-margin-mobile md:px-lg max-w-container-max mx-auto space-y-md">
+<!-- User Profile Card -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-[0px_4px_20px_rgba(11,31,51,0.05)] p-md flex items-center space-x-md">
+<div class="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center flex-shrink-0">
+<span class="font-headline-md text-headline-md text-on-primary-fixed">JD</span>
+</div>
+<div class="flex-grow">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-xs">Jane Doe</h2>
+<p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                    India • Home Currency: INR
+                </p>
+</div>
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors text-primary">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</section>
+<!-- Settings Section -->
+<section class="space-y-sm">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider px-sm">Preferences</h3>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-[0px_4px_20px_rgba(11,31,51,0.05)] overflow-hidden">
+<!-- Currency Preference -->
+<div class="flex items-center justify-between p-md border-b border-surface-container hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center space-x-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">currency_exchange</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-surface">Default Currency</p>
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">INR (Indian Rupee)</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+</div>
+<!-- Theme -->
+<div class="flex items-center justify-between p-md border-b border-surface-container hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center space-x-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">light_mode</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-surface">App Theme</p>
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Light</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+</div>
+<!-- Notifications -->
+<div class="flex items-center justify-between p-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center space-x-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">notifications</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-surface">Notifications</p>
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Push &amp; Email</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Support Section -->
+<section class="space-y-sm">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider px-sm">Support</h3>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-[0px_4px_20px_rgba(11,31,51,0.05)] overflow-hidden">
+<div class="flex items-center justify-between p-md border-b border-surface-container hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center space-x-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">help_center</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface">Help Center &amp; FAQ</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center space-x-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">chat_bubble</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface">Contact Support</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- App Info -->
+<section class="bg-error-container/30 rounded-xl border border-error/20 p-md flex items-start space-x-sm mt-lg">
+<span class="material-symbols-outlined text-error mt-xs">info</span>
+<div>
+<h4 class="font-label-md text-label-md text-error mb-1">V1 Prototype Status</h4>
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">
+                    Payment execution is currently disabled. Information displayed is for planning purposes only. This is not a transaction processing receipt.
+                </p>
+</div>
+</section>
+<div class="flex justify-center mt-xl mb-xl">
+<button class="font-label-md text-label-md text-error hover:bg-error-container px-lg py-sm rounded-full transition-colors border border-error/20">
+                Log Out
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl shadow-[0px_-4px_20px_rgba(11,31,51,0.05)] bg-surface-container-lowest dark:bg-primary-container">
+<div class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-2 pb-safe bg-surface-container-lowest dark:bg-primary-container">
+<!-- Home: Inactive -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-primary-container p-2 hover:opacity-80 transition-opacity scale-110 duration-300 transition-transform">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-label-md text-[10px] leading-tight font-medium">Home</span>
+</button>
+<!-- Scan: Inactive -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-primary-container p-2 hover:opacity-80 transition-opacity scale-110 duration-300 transition-transform">
+<span class="material-symbols-outlined mb-1" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="font-label-md text-[10px] leading-tight font-medium">Scan</span>
+</button>
+<!-- Activity: Inactive -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-primary-container p-2 hover:opacity-80 transition-opacity scale-110 duration-300 transition-transform">
+<span class="material-symbols-outlined mb-1" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-md text-[10px] leading-tight font-medium">Activity</span>
+</button>
+<!-- Profile: Active -->
+<button class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full p-2 w-12 h-12 hover:opacity-80 transition-opacity scale-110 duration-300 transition-transform">
+<span class="material-symbols-outlined fill" data-icon="person">person</span>
+<span class="font-label-md text-[10px] leading-tight font-medium sr-only">Profile</span>
+</button>
+</div>
+</nav>
+</body></html>

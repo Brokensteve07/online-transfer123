@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GlobePay - Activity</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-container": "#0b1f33",
+                      "on-secondary-fixed": "#001a42",
+                      "on-error": "#ffffff",
+                      "on-tertiary-container": "#009a43",
+                      "surface-dim": "#d8dadd",
+                      "on-tertiary-fixed": "#002109",
+                      "surface-bright": "#f7f9fc",
+                      "tertiary": "#000601",
+                      "surface-tint": "#4e6077",
+                      "tertiary-fixed": "#7ffc97",
+                      "on-primary-fixed-variant": "#36485e",
+                      "secondary-container": "#2170e4",
+                      "primary-fixed": "#d1e4ff",
+                      "on-primary-container": "#7587a0",
+                      "on-secondary-fixed-variant": "#004395",
+                      "surface-variant": "#e0e3e6",
+                      "primary": "#00050e",
+                      "tertiary-fixed-dim": "#62df7d",
+                      "on-primary": "#ffffff",
+                      "on-background": "#191c1e",
+                      "surface-container-high": "#e6e8eb",
+                      "error": "#ba1a1a",
+                      "surface-container-lowest": "#ffffff",
+                      "inverse-on-surface": "#eff1f4",
+                      "surface-container-low": "#f2f4f7",
+                      "secondary": "#0058be",
+                      "on-surface": "#191c1e",
+                      "on-secondary-container": "#fefcff",
+                      "primary-fixed-dim": "#b5c8e3",
+                      "surface-container": "#eceef1",
+                      "inverse-primary": "#b5c8e3",
+                      "surface-container-highest": "#e0e3e6",
+                      "on-primary-fixed": "#081d30",
+                      "outline-variant": "#c4c6cd",
+                      "background": "#f7f9fc",
+                      "on-tertiary": "#ffffff",
+                      "secondary-fixed-dim": "#adc6ff",
+                      "surface": "#f7f9fc",
+                      "error-container": "#ffdad6",
+                      "outline": "#74777d",
+                      "on-surface-variant": "#44474c",
+                      "on-tertiary-fixed-variant": "#005320",
+                      "on-error-container": "#93000a",
+                      "on-secondary": "#ffffff",
+                      "inverse-surface": "#2d3133",
+                      "secondary-fixed": "#d8e2ff",
+                      "tertiary-container": "#00240a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "container-max": "1200px",
+                      "xs": "4px",
+                      "margin-mobile": "16px",
+                      "gutter": "24px",
+                      "sm": "12px",
+                      "lg": "40px",
+                      "base": "8px",
+                      "xl": "64px",
+                      "md": "24px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "disclaimer-sm": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "disclaimer-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            -webkit-font-smoothing: antialiased;
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
+    </style>
+</head>
+<body class="min-h-screen pb-[80px]">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface text-primary dark:text-primary-fixed fixed top-0 w-full z-50 border-b border-outline-variant dark:border-outline flat no shadows flex justify-between items-center h-16 px-margin-mobile w-full">
+<button class="text-primary dark:text-primary-fixed hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors scale-95 duration-200 transition-transform p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<div class="font-headline-md text-headline-md-mobile text-primary dark:text-primary-fixed flex-1 text-center">
+            Scan Activity
+        </div>
+<button class="text-primary dark:text-primary-fixed font-label-md text-label-md hover:bg-surface-container dark:hover:bg-surface-container-high transition-colors scale-95 duration-200 transition-transform px-3 py-1.5 rounded-lg border border-outline-variant">
+            V1 Prototype
+        </button>
+</header>
+<!-- Main Content -->
+<main class="pt-[80px] px-margin-mobile md:px-lg max-w-container-max mx-auto pb-xl">
+<div class="mb-sm text-center">
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Information history only. Estimated values shown.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-sm">
+<!-- Activity Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl border border-surface-variant shadow-[0px_4px_20px_rgba(11,31,51,0.05)] p-md hover:shadow-[0px_8px_30px_rgba(11,31,51,0.08)] transition-shadow">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">Tokyo Ramen</h3>
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Japan • Oct 24, 2023</p>
+</div>
+</div>
+<div class="bg-primary-fixed-dim/20 px-2 py-1 rounded-full">
+<span class="font-disclaimer-sm text-disclaimer-sm text-primary">Scanned</span>
+</div>
+</div>
+<div class="border-t border-surface-variant pt-sm">
+<div class="flex justify-between items-end">
+<div>
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Original Amount</p>
+<p class="font-body-md text-body-md text-on-surface">¥ 1,200</p>
+</div>
+<div class="text-right">
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Est. Converted</p>
+<p class="font-headline-md text-headline-md-mobile text-on-surface">₹ 680</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Activity Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl border border-surface-variant shadow-[0px_4px_20px_rgba(11,31,51,0.05)] p-md hover:shadow-[0px_8px_30px_rgba(11,31,51,0.08)] transition-shadow">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">storefront</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">FamilyMart</h3>
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Japan • Oct 23, 2023</p>
+</div>
+</div>
+<div class="bg-primary-fixed-dim/20 px-2 py-1 rounded-full">
+<span class="font-disclaimer-sm text-disclaimer-sm text-primary">Scanned</span>
+</div>
+</div>
+<div class="border-t border-surface-variant pt-sm">
+<div class="flex justify-between items-end">
+<div>
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Original Amount</p>
+<p class="font-body-md text-body-md text-on-surface">¥ 450</p>
+</div>
+<div class="text-right">
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Est. Converted</p>
+<p class="font-headline-md text-headline-md-mobile text-on-surface">₹ 255</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Activity Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl border border-surface-variant shadow-[0px_4px_20px_rgba(11,31,51,0.05)] p-md hover:shadow-[0px_8px_30px_rgba(11,31,51,0.08)] transition-shadow">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">card_giftcard</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">Kyoto Souvenirs</h3>
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Japan • Oct 21, 2023</p>
+</div>
+</div>
+<div class="bg-primary-fixed-dim/20 px-2 py-1 rounded-full">
+<span class="font-disclaimer-sm text-disclaimer-sm text-primary">Scanned</span>
+</div>
+</div>
+<div class="border-t border-surface-variant pt-sm">
+<div class="flex justify-between items-end">
+<div>
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Original Amount</p>
+<p class="font-body-md text-body-md text-on-surface">¥ 3,500</p>
+</div>
+<div class="text-right">
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Est. Converted</p>
+<p class="font-headline-md text-headline-md-mobile text-on-surface">₹ 1,980</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Activity Card 4 -->
+<div class="bg-surface-container-lowest rounded-xl border border-surface-variant shadow-[0px_4px_20px_rgba(11,31,51,0.05)] p-md hover:shadow-[0px_8px_30px_rgba(11,31,51,0.08)] transition-shadow">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">train</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">JR Pass Topup</h3>
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Japan • Oct 20, 2023</p>
+</div>
+</div>
+<div class="bg-primary-fixed-dim/20 px-2 py-1 rounded-full">
+<span class="font-disclaimer-sm text-disclaimer-sm text-primary">Scanned</span>
+</div>
+</div>
+<div class="border-t border-surface-variant pt-sm">
+<div class="flex justify-between items-end">
+<div>
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Original Amount</p>
+<p class="font-body-md text-body-md text-on-surface">¥ 5,000</p>
+</div>
+<div class="text-right">
+<p class="font-disclaimer-sm text-disclaimer-sm text-on-surface-variant">Est. Converted</p>
+<p class="font-headline-md text-headline-md-mobile text-on-surface">₹ 2,830</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl shadow-[0px_-4px_20px_rgba(11,31,51,0.05)] bg-surface-container-lowest dark:bg-primary-container shadow-lg fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-2 pb-safe md:hidden">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-primary-container p-2 hover:opacity-80 transition-opacity scale-110 duration-300 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+<span class="font-label-md text-label-md mt-xs">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-primary-container p-2 hover:opacity-80 transition-opacity scale-110 duration-300 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">qr_code_scanner</span>
+<span class="font-label-md text-label-md mt-xs">Scan</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full p-2 w-16 h-16 -mt-6 shadow-md hover:opacity-80 transition-opacity scale-110 duration-300 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+<span class="font-label-md text-label-md mt-xs text-[10px] leading-tight">Activity</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-primary-container p-2 hover:opacity-80 transition-opacity scale-110 duration-300 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">person</span>
+<span class="font-label-md text-label-md mt-xs">Profile</span>
+</button>
+</nav>
+</body></html>

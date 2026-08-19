@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>GlobePay — Scan. Understand. Pay. (Travel Wallet)</title>
+  <meta name="description" content="Know what you're paying before you pay. Real QR payment reader & FX cost estimator for international travelers." />
+
+  <!-- Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- React 18 & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- jsQR Client-side QR Decoder -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary-container": "#0b1f33",
+            "on-secondary-fixed": "#001a42",
+            "on-error": "#ffffff",
+            "on-tertiary-container": "#009a43",
+            "surface-dim": "#d8dadd",
+            "surface-bright": "#f7f9fc",
+            "tertiary": "#000601",
+            "surface-tint": "#4e6077",
+            "tertiary-fixed": "#7ffc97",
+            "secondary-container": "#2170e4",
+            "primary-fixed": "#d1e4ff",
+            "on-primary-container": "#7587a0",
+            "surface-variant": "#e0e3e6",
+            "primary": "#00050e",
+            "on-primary": "#ffffff",
+            "on-background": "#191c1e",
+            "surface-container-high": "#e6e8eb",
+            "error": "#ba1a1a",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2f4f7",
+            "secondary": "#0058be",
+            "on-surface": "#191c1e",
+            "surface-container": "#eceef1",
+            "outline-variant": "#c4c6cd",
+            "background": "#f7f9fc",
+            "surface": "#f7f9fc",
+            "outline": "#74777d",
+            "on-surface-variant": "#44474c"
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          borderRadius: { DEFAULT: '0.25rem', lg: '0.5rem', xl: '0.75rem', '2xl': '1rem', '3xl': '1.25rem', full: '9999px' },
+          spacing: { 'container-max': '1200px', xs: '4px', 'margin-mobile': '16px', gutter: '24px', sm: '12px', lg: '40px', base: '8px', xl: '64px', md: '24px' }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background-color: #f7f9fc; color: #191c1e; }
+    .bg-pattern {
+      background-color: #f7f9fc;
+      background-image: radial-gradient(#d0d5dd 1.2px, transparent 1.2px);
+      background-size: 20px 20px;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+    .wallet-card-bg {
+      background: linear-gradient(135deg, #06121E 0%, #0B1F33 50%, #132B45 100%);
+      box-shadow: 0 20px 40px -15px rgba(11, 31, 51, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .scanner-frame { box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65); }
+    .corner {
+      position: absolute; width: 40px; height: 40px; border-color: #2170e4; border-style: solid;
+      box-shadow: 0 0 12px rgba(33, 112, 228, 0.7);
+    }
+    .corner-tl { top: 0; left: 0; border-width: 4px 0 0 4px; border-radius: 12px 0 0 0; }
+    .corner-tr { top: 0; right: 0; border-width: 4px 4px 0 0; border-radius: 0 12px 0 0; }
+    .corner-bl { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-radius: 0 0 0 12px; }
+    .corner-br { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-radius: 0 0 12px 0; }
+    .scan-line {
+      width: 100%; height: 2.5px; background: #2170e4;
+      box-shadow: 0 0 12px #2170e4, 0 0 24px #2170e4;
+      animation: scanAnim 2s ease-in-out infinite; opacity: 0.95;
+    }
+    @keyframes scanAnim { 0% { transform: translateY(0); } 50% { transform: translateY(260px); } 100% { transform: translateY(0); } }
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    @keyframes pulseGlow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.9; } }
+    .pulse-glow { animation: pulseGlow 2.5s ease-in-out infinite; }
+  </style>
+</head>
+<body class="bg-pattern text-on-background min-h-screen flex flex-col antialiased selection:bg-secondary-container selection:text-on-secondary-container">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // --- CONSTANTS & CURRENCIES ---
+    const SUPPORTED_CURRENCIES = [
+      { code: 'INR', name: 'Indian Rupee', symbol: '₹', flag: '🇮🇳' },
+      { code: 'USD', name: 'US Dollar', symbol: '$', flag: '🇺🇸' },
+      { code: 'EUR', name: 'Euro', symbol: '€', flag: '🇪🇺' },
+      { code: 'GBP', name: 'British Pound', symbol: '£', flag: '🇬🇧' },
+      { code: 'JPY', name: 'Japanese Yen', symbol: '¥', flag: '🇯🇵' },
+      { code: 'THB', name: 'Thai Baht', symbol: '฿', flag: '🇹🇭' },
+      { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', flag: '🇸🇬' },
+      { code: 'AED', name: 'UAE Dirham', symbol: 'AED', flag: '🇦🇪' },
+      { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', flag: '🇦🇺' },
+      { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', flag: '🇨🇦' },
+    ];
+
+    const DESTINATION_COUNTRIES = [
+      { code: 'JP', name: 'Japan', flag: '🇯🇵', currency: 'JPY' },
+      { code: 'IN', name: 'India', flag: '🇮🇳', currency: 'INR' },
+      { code: 'TH', name: 'Thailand', flag: '🇹🇭', currency: 'THB' },
+      { code: 'SG', name: 'Singapore', flag: '🇸🇬', currency: 'SGD' },
+      { code: 'AE', name: 'United Arab Emirates', flag: '🇦🇪', currency: 'AED' },
+      { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', currency: 'GBP' },
+      { code: 'US', name: 'United States', flag: '🇺🇸', currency: 'USD' },
+    ];
+
+    const FALLBACK_USD_RATES = {
+      USD: 1.0, INR: 83.50, JPY: 151.20, EUR: 0.92, GBP: 0.79,
+      THB: 36.20, SGD: 1.35, AED: 3.67, AUD: 1.52, CAD: 1.36
+    };
+
+    const SAMPLE_QRS = [
+      { id: 'tokyo-ramen', label: 'Tokyo Ramen (Japan JPY)', desc: '¥10,000 Payment QR', flag: '🇯🇵', payload: 'https://payqr.jp/pay?m=Tokyo%20Ramen&amt=10000&cur=JPY' },
+      { id: 'hyderabad-cafe', label: 'Hyderabad Cafe (India UPI)', desc: '₹1,000 Indian UPI QR', flag: '🇮🇳', payload: 'upi://pay?pa=hyderabadcafe@upi&pn=Hyderabad%20Cafe&am=1000&cu=INR&tn=Dinner%20Bill' },
+      { id: 'bangkok-market', label: 'Bangkok Market (Thailand THB)', desc: '฿850 PromptPay QR', flag: '🇹🇭', payload: 'https://promptpay.io/pay?m=Bangkok%20Night%20Market&amt=850&cur=THB' },
+      { id: 'singapore-hawker', label: 'Marina Hawker (Singapore SGD)', desc: 'S$45.00 SGQR', flag: '🇸🇬', payload: 'https://sgqr.nets.com.sg/pay?m=Marina%20Bay%20Hawker&amt=45.00&cur=SGD' }
+    ];
+
+    // --- CURRENCY & STORAGE HELPERS ---
+    let liveRatesCache = { ...FALLBACK_USD_RATES };
+
+    const fetchFxRates = async () => {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.rates) liveRatesCache = { ...FALLBACK_USD_RATES, ...data.rates };
+        }
+      } catch (e) {}
+    };
+
+    const getFxRate = (from, to) => {
+      if (from.toUpperCase() === to.toUpperCase()) return 1.0;
+      const f = liveRatesCache[from.toUpperCase()] || FALLBACK_USD_RATES[from.toUpperCase()] || 1;
+      const t = liveRatesCache[to.toUpperCase()] || FALLBACK_USD_RATES[to.toUpperCase()] || 1;
+      return Number((t / f).toFixed(4));
+    };
+
+    const formatCurr = (amount, code) => {
+      const found = SUPPORTED_CURRENCIES.find(c => c.code === code.toUpperCase());
+      const sym = found ? found.symbol : code;
+      const fmt = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: code === 'JPY' ? 0 : 2,
+        maximumFractionDigits: code === 'JPY' ? 0 : 2,
+      }).format(amount);
+      return `${sym}${fmt}`;
+    };
+
+    const getProfile = () => {
+      try {
+        const d = localStorage.getItem('globepay_user_profile');
+        if (d) return JSON.parse(d);
+      } catch (e) {}
+      return null;
+    };
+
+    const saveProfile = (p) => localStorage.setItem('globepay_user_profile', JSON.stringify(p));
+
+    const getWallet = () => {
+      try {
+        const d = localStorage.getItem('globepay_wallet_balance');
+        if (d) return JSON.parse(d);
+      } catch (e) {}
+      return {
+        balanceHomeCurrency: 50000,
+        dailyLimitHomeCurrency: 50000,
+        spentTodayHomeCurrency: 6096,
+        savedFxHomeCurrency: 840,
+        multiCurrencyHoldings: [
+          { currency: 'JPY', amount: 50000, flag: '🇯🇵' },
+          { currency: 'THB', amount: 5000, flag: '🇹🇭' },
+          { currency: 'USD', amount: 500, flag: '🇺🇸' },
+          { currency: 'EUR', amount: 250, flag: '🇪🇺' }
+        ]
+      };
+    };
+
+    const saveWallet = (w) => localStorage.setItem('globepay_wallet_balance', JSON.stringify(w));
+
+    const getScans = () => {
+      try {
+        const d = localStorage.getItem('globepay_scan_history');
+        if (d) return JSON.parse(d);
+      } catch (e) {}
+      const initialScans = [
+        { id: 's1', timestamp: new Date(Date.now() - 3600000).toISOString(), merchantName: 'Tokyo Ramen Store', merchantId: 'jp.ramen.shibuya@payqr', country: 'Japan', countryFlag: '🇯🇵', network: 'PayPay / Japan QR', originalCurrency: 'JPY', originalAmount: 1200, homeCurrency: 'INR', convertedAmount: 684, exchangeRate: 0.57, estimatedFxFee: 12, estimatedServiceFee: 15, totalEstimatedCost: 711, status: 'VERIFIED', rawPayload: 'https://payqr.jp/pay?m=TokyoRamen&amt=1200&cur=JPY' },
+        { id: 's2', timestamp: new Date(Date.now() - 14400000).toISOString(), merchantName: '7-Eleven Shibuya', merchantId: '711.shibuya.jp', country: 'Japan', countryFlag: '🇯🇵', network: 'Japan PayQR', originalCurrency: 'JPY', originalAmount: 450, homeCurrency: 'INR', convertedAmount: 256.5, exchangeRate: 0.57, estimatedFxFee: 5, estimatedServiceFee: 10, totalEstimatedCost: 271.5, status: 'VERIFIED', rawPayload: 'https://payqr.jp/pay?m=7ElevenShibuya&amt=450&cur=JPY' }
+      ];
+      localStorage.setItem('globepay_scan_history', JSON.stringify(initialScans));
+      return initialScans;
+    };
+
+    const saveScan = (item) => {
+      const current = getScans();
+      localStorage.setItem('globepay_scan_history', JSON.stringify([item, ...current]));
+    };
+
+    const parseQR = (text) => {
+      const t = text.trim();
+      if (t.toLowerCase().startsWith('upi://pay')) {
+        try {
+          const url = new URL(t);
+          const p = url.searchParams;
+          return {
+            type: 'UPI_QR', network: 'UPI (Unified Payments Interface)',
+            merchantName: p.get('pn') ? decodeURIComponent(p.get('pn')) : null,
+            merchantId: p.get('pa') ? decodeURIComponent(p.get('pa')) : null,
+            country: 'India', countryFlag: '🇮🇳', currency: (p.get('cu') || 'INR').toUpperCase(),
+            amount: p.get('am') ? parseFloat(p.get('am')) : null, rawText: t
+          };
+        } catch (e) {}
+      }
+
+      if (t.startsWith('http://') || t.startsWith('https://')) {
+        try {
+          const u = new URL(t);
+          const p = u.searchParams;
+          const host = u.hostname.toLowerCase();
+
+          const isJP = host.includes('payqr.jp') || host.includes('paypay') || host.includes('.jp');
+          const isTH = host.includes('promptpay') || host.includes('.th');
+          const isSG = host.includes('sgqr') || host.includes('nets') || host.includes('.sg');
+
+          let m = p.get('m') || p.get('merchant') || p.get('pn') || p.get('payee');
+          if (m) m = decodeURIComponent(m);
+          let amt = p.get('amt') || p.get('amount') || p.get('am');
+          let cur = p.get('cur') || p.get('currency') || p.get('cu');
+
+          if (isJP) return { type: 'FOREIGN_PAYMENT_QR', network: 'PayPay / Japan QR Network', merchantName: m || 'Tokyo Ramen', merchantId: host, country: 'Japan', countryFlag: '🇯🇵', currency: (cur || 'JPY').toUpperCase(), amount: amt ? parseFloat(amt) : null, rawText: t };
+          if (isTH) return { type: 'FOREIGN_PAYMENT_QR', network: 'Thai PromptPay QR', merchantName: m || 'Thailand Merchant', merchantId: host, country: 'Thailand', countryFlag: '🇹🇭', currency: (cur || 'THB').toUpperCase(), amount: amt ? parseFloat(amt) : null, rawText: t };
+          if (isSG) return { type: 'FOREIGN_PAYMENT_QR', network: 'SGQR Singapore', merchantName: m || 'Singapore Merchant', merchantId: host, country: 'Singapore', countryFlag: '🇸🇬', currency: (cur || 'SGD').toUpperCase(), amount: amt ? parseFloat(amt) : null, rawText: t };
+
+          return { type: 'FOREIGN_PAYMENT_QR', network: 'International Merchant QR', merchantName: m || host, merchantId: host, country: 'International', countryFlag: '🌐', currency: (cur || 'USD').toUpperCase(), amount: amt ? parseFloat(amt) : null, rawText: t };
+        } catch (e) {}
+      }
+
+      if (t.toLowerCase().includes('pay') || t.toLowerCase().includes('bill') || t.toLowerCase().includes('invoice')) {
+        return { type: 'UNSUPPORTED_PAYMENT_QR', network: 'Unrecognized Protocol', merchantName: null, merchantId: null, country: null, countryFlag: null, currency: null, amount: null, rawText: t };
+      }
+
+      return { type: 'NON_PAYMENT_QR', network: 'Standard QR Code', merchantName: null, merchantId: null, country: null, countryFlag: null, currency: null, amount: null, rawText: t };
+    };
+
+    // --- MAIN REACT APPLICATION COMPONENT ---
+    function GlobePayApp() {
+      const [profile, setProfile] = useState(getProfile());
+      const [wallet, setWallet] = useState(getWallet());
+      const [activeTab, setActiveTab] = useState('home');
+      const [scans, setScans] = useState(getScans());
+
+      // Login Form State
+      const [loginName, setLoginName] = useState('Nikhil');
+      const [loginEmail, setLoginEmail] = useState('nikhil@globepay.com');
+      const [loginCurrency, setLoginCurrency] = useState('INR');
+
+      // Modals & Drawers
+      const [showAddCashModal, setShowAddCashModal] = useState(false);
+      const [addCashAmount, setAddCashAmount] = useState('10000');
+      const [isSetupOpen, setIsSetupOpen] = useState(false);
+      const [showFxCalculator, setShowFxCalculator] = useState(false);
+      const [calcAmount, setCalcAmount] = useState('1000');
+      const [calcFromCur, setCalcFromCur] = useState('JPY');
+
+      // Scanning Flow States
+      const [decodedPayload, setDecodedPayload] = useState(null);
+      const [confirmedAmount, setConfirmedAmount] = useState(null);
+      const [showExecutionModal, setShowExecutionModal] = useState(false);
+
+      // Camera State targeting REAR BACK CAMERA
+      const videoRef = useRef(null);
+      const canvasRef = useRef(null);
+      const [facingMode, setFacingMode] = useState('environment'); // REAR CAMERA ON MOBILE
+      const [cameraState, setCameraState] = useState('INITIALIZING');
+      const [camError, setCamError] = useState(null);
+      const [showPresets, setShowPresets] = useState(false);
+
+      useEffect(() => {
+        fetchFxRates();
+      }, [activeTab, decodedPayload, showExecutionModal, profile]);
+
+      // Camera Loop Scanner
+      useEffect(() => {
+        let stream = null;
+        let animationFrameId = null;
+
+        if (profile && activeTab === 'scan' && !decodedPayload) {
+          const initCam = async () => {
+            setCameraState('INITIALIZING');
+            setCamError(null);
+
+            const constraints = {
+              video: {
+                facingMode: { ideal: facingMode },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              }
+            };
+
+            try {
+              stream = await navigator.mediaDevices.getUserMedia(constraints);
+              if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                await videoRef.current.play();
+                setCameraState('ACTIVE');
+
+                const canvas = canvasRef.current || document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                const scanFrame = () => {
+                  if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
+                    canvas.height = videoRef.current.videoHeight;
+                    canvas.width = videoRef.current.videoWidth;
+                    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                    if (window.jsQR) {
+                      const code = window.jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+                      if (code && code.data) {
+                        const parsed = parseQR(code.data);
+                        if (stream) stream.getTracks().forEach(t => t.stop());
+                        setDecodedPayload(parsed);
+                        return;
+                      }
+                    }
+                  }
+                  animationFrameId = requestAnimationFrame(scanFrame);
+                };
+                animationFrameId = requestAnimationFrame(scanFrame);
+              }
+            } catch (err) {
+              try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                if (videoRef.current) {
+                  videoRef.current.srcObject = stream;
+                  await videoRef.current.play();
+                  setCameraState('ACTIVE');
+                }
+              } catch (fallbackErr) {
+                if (fallbackErr.name === 'NotAllowedError' || fallbackErr.message?.includes('Permission')) {
+                  setCameraState('PERMISSION_DENIED');
+                  setCamError('Camera permission is required to scan QR codes.');
+                } else {
+                  setCameraState('UNAVAILABLE');
+                  setCamError('Rear camera unavailable. Try uploading an image or selecting a QR preset.');
+                }
+              }
+            }
+          };
+          initCam();
+        }
+
+        return () => {
+          if (stream) stream.getTracks().forEach(t => t.stop());
+          if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        };
+      }, [profile, activeTab, decodedPayload, facingMode]);
+
+      const handleToggleCameraFacing = () => {
+        setFacingMode(prev => (prev === 'environment' ? 'user' : 'environment'));
+      };
+
+      const handleFileUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            if (window.jsQR) {
+              const code = window.jsQR(imageData.data, imageData.width, imageData.height);
+              if (code && code.data) {
+                setDecodedPayload(parseQR(code.data));
+              } else {
+                alert("Couldn't read a QR code from this image. Please try another QR image.");
+              }
+            }
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      const handleLoginSubmit = (e) => {
+        e.preventDefault();
+        const newP = {
+          name: loginName.trim() || 'Nikhil',
+          email: loginEmail.trim() || 'nikhil@globepay.com',
+          country: 'India',
+          countryFlag: '🇮🇳',
+          homeCurrency: loginCurrency,
+          isLoggedIn: true
+        };
+        saveProfile(newP);
+        setProfile(newP);
+        setActiveTab('home');
+      };
+
+      const handleAddCash = (amtToAdd) => {
+        const amt = parseFloat(amtToAdd);
+        if (!isNaN(amt) && amt > 0) {
+          const updatedW = { ...wallet, balanceHomeCurrency: wallet.balanceHomeCurrency + amt };
+          saveWallet(updatedW);
+          setWallet(updatedW);
+          setShowAddCashModal(false);
+        }
+      };
+
+      const handleSaveCompleteScan = () => {
+        if (decodedPayload && confirmedAmount) {
+          const rate = getFxRate(decodedPayload.currency || 'USD', profile.homeCurrency);
+          const baseConv = confirmedAmount * rate;
+          const isSame = (decodedPayload.currency || 'USD').toUpperCase() === profile.homeCurrency.toUpperCase();
+          const fxFee = isSame ? 0 : baseConv * 0.0125;
+          const serviceFee = isSame ? 0 : 30;
+          const totalCost = Number((baseConv + fxFee + serviceFee).toFixed(2));
+
+          const item = {
+            id: `scan-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            merchantName: decodedPayload.merchantName || 'Tokyo Ramen',
+            merchantId: decodedPayload.merchantId,
+            country: decodedPayload.country || 'Japan',
+            countryFlag: decodedPayload.countryFlag || '🇯🇵',
+            network: decodedPayload.network,
+            originalCurrency: decodedPayload.currency || 'JPY',
+            originalAmount: confirmedAmount,
+            homeCurrency: profile.homeCurrency,
+            convertedAmount: Number(baseConv.toFixed(2)),
+            exchangeRate: rate,
+            estimatedFxFee: Number(fxFee.toFixed(2)),
+            estimatedServiceFee: serviceFee,
+            totalEstimatedCost: totalCost,
+            status: 'VERIFIED',
+            rawPayload: decodedPayload.rawText
+          };
+          saveScan(item);
+          setScans(getScans());
+
+          const updatedW = {
+            ...wallet,
+            balanceHomeCurrency: Math.max(0, wallet.balanceHomeCurrency - totalCost),
+            spentTodayHomeCurrency: wallet.spentTodayHomeCurrency + totalCost,
+            savedFxHomeCurrency: wallet.savedFxHomeCurrency + (fxFee * 1.5)
+          };
+          saveWallet(updatedW);
+          setWallet(updatedW);
+        }
+        setDecodedPayload(null);
+        setConfirmedAmount(null);
+        setShowExecutionModal(false);
+        setActiveTab('home');
+      };
+
+      // ----------------------------------------------------
+      // 1. ULTRA-CLEAN APPLE MINIMALIST LOGIN SCREEN (NO QR CARD)
+      // ----------------------------------------------------
+      if (!profile || !profile.isLoggedIn) {
+        return (
+          <div className="min-h-screen bg-pattern text-[#191c1e] flex flex-col justify-center items-center px-margin-mobile py-12 relative overflow-hidden">
+            <div className="w-full max-w-sm space-y-8 z-10">
+              {/* Minimal Brand Mark */}
+              <div className="text-center space-y-3">
+                <div className="w-16 h-16 rounded-2xl bg-[#00050e] text-white flex items-center justify-center font-black text-3xl mx-auto shadow-2xl shadow-slate-950/20">
+                  G
+                </div>
+                <h1 className="text-3xl font-black tracking-tight text-[#00050e]">GlobePay</h1>
+                <p className="text-xs text-on-surface-variant font-medium uppercase tracking-widest">Scan. Understand. Pay.</p>
+              </div>
+
+              {/* Ultra-Clean Login Card */}
+              <form onSubmit={handleLoginSubmit} className="bg-white rounded-3xl p-7 shadow-fintech border border-outline-variant space-y-5">
+                <div>
+                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                    Account Holder Name
+                  </label>
+                  <input
+                    type="text"
+                    value={loginName}
+                    onChange={e => setLoginName(e.target.value)}
+                    placeholder="e.g. Nikhil"
+                    required
+                    className="w-full px-4 py-3.5 rounded-2xl bg-surface-container-low border border-outline-variant text-sm font-bold text-primary focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={loginEmail}
+                    onChange={e => setLoginEmail(e.target.value)}
+                    placeholder="nikhil@globepay.com"
+                    required
+                    className="w-full px-4 py-3.5 rounded-2xl bg-surface-container-low border border-outline-variant text-sm font-bold text-primary focus:outline-none focus:ring-2 focus:ring-secondary focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                    Home Base Currency
+                  </label>
+                  <select
+                    value={loginCurrency}
+                    onChange={e => setLoginCurrency(e.target.value)}
+                    className="w-full px-4 py-3.5 rounded-2xl bg-surface-container-low border border-outline-variant text-sm font-extrabold text-primary focus:outline-none focus:ring-2 focus:ring-secondary"
+                  >
+                    {SUPPORTED_CURRENCIES.map(c => (
+                      <option key={c.code} value={c.code}>{c.flag} {c.code} ({c.symbol}) — {c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-4 rounded-2xl bg-[#00050e] hover:bg-slate-900 text-white font-extrabold text-sm shadow-xl transition-all active:scale-95 mt-2 flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-lg">account_balance_wallet</span>
+                  Sign In to GlobePay Wallet
+                </button>
+              </form>
+
+              <div className="text-center text-[11px] text-outline font-medium flex items-center justify-center gap-1.5">
+                <span className="material-symbols-outlined text-sm">lock</span>
+                <span>Protected by 256-bit Bank Grade Encryption</span>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ----------------------------------------------------
+      // 2. MAIN APPLICATION DASHBOARD WITH IMPROVED WALLET
+      // ----------------------------------------------------
+      const spentPercent = Math.min(100, Math.round((wallet.spentTodayHomeCurrency / wallet.dailyLimitHomeCurrency) * 100));
+
+      return (
+        <div className="min-h-screen flex flex-col pb-20 md:pb-8">
+          {/* TopAppBar */}
+          <header className="bg-surface fixed top-0 w-full z-50 border-b border-outline-variant shadow-sm">
+            <div className="flex justify-between items-center h-16 px-margin-mobile w-full max-w-container-max mx-auto">
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setDecodedPayload(null); setActiveTab('home'); }}>
+                <div className="w-9 h-9 rounded-xl bg-[#00050e] text-white font-bold text-lg flex items-center justify-center shadow">G</div>
+                <h1 className="text-xl font-extrabold text-primary tracking-tight">GlobePay</h1>
+              </div>
+              <button onClick={() => setIsSetupOpen(true)} className="text-xs font-semibold text-on-surface-variant bg-surface-container hover:bg-surface-container-high px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-outline-variant">
+                <span>{profile.countryFlag}</span>
+                <span className="font-bold text-primary">{profile.homeCurrency}</span>
+                <span className="text-slate-400 font-normal">({profile.name})</span>
+              </button>
+            </div>
+          </header>
+
+          {/* SETUP MODAL */}
+          {isSetupOpen && (
+            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                <div className="flex items-center justify-between border-b border-surface-variant pb-3">
+                  <h3 className="font-bold text-lg text-primary">Traveler Preferences</h3>
+                  <button onClick={() => setIsSetupOpen(false)} className="text-outline font-bold">✕</button>
+                </div>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="font-bold text-on-surface block mb-1">Your Name</label>
+                    <input type="text" value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} className="w-full p-3 rounded-xl border border-outline-variant font-semibold" />
+                  </div>
+                  <div>
+                    <label className="font-bold text-on-surface block mb-1">Home Currency</label>
+                    <select value={profile.homeCurrency} onChange={e => setProfile({...profile, homeCurrency: e.target.value})} className="w-full p-3 rounded-xl border border-outline-variant font-bold text-primary">
+                      {SUPPORTED_CURRENCIES.map(c => (
+                        <option key={c.code} value={c.code}>{c.flag} {c.code} ({c.symbol}) - {c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <button onClick={() => { saveProfile(profile); setIsSetupOpen(false); }} className="w-full py-3.5 rounded-2xl bg-secondary text-white font-bold text-sm shadow-md">Save Preferences</button>
+              </div>
+            </div>
+          )}
+
+          {/* TOP UP WALLET MODAL */}
+          {showAddCashModal && (
+            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-xl font-bold">💳</div>
+                <h3 className="font-extrabold text-lg text-primary">Top Up Travel Wallet</h3>
+                <p className="text-xs text-on-surface-variant">Select top-up amount to add to your travel balance</p>
+                
+                {/* Preset Buttons */}
+                <div className="grid grid-cols-3 gap-2">
+                  {['5000', '10000', '25000'].map(val => (
+                    <button key={val} type="button" onClick={() => setAddCashAmount(val)} className={`py-2 rounded-xl text-xs font-bold border transition ${addCashAmount === val ? 'bg-secondary text-white border-secondary' : 'bg-surface-container border-outline-variant text-primary'}`}>
+                      +{formatCurr(parseFloat(val), profile.homeCurrency)}
+                    </button>
+                  ))}
+                </div>
+
+                <form onSubmit={e => { e.preventDefault(); handleAddCash(addCashAmount); }} className="space-y-3">
+                  <input type="number" value={addCashAmount} onChange={e => setAddCashAmount(e.target.value)} className="w-full p-3 rounded-2xl bg-surface-container-low border border-outline-variant text-lg font-bold text-center text-primary" />
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setShowAddCashModal(false)} className="w-1/2 py-3 bg-surface-container text-on-surface-variant font-bold rounded-2xl text-xs">Cancel</button>
+                    <button type="submit" className="w-1/2 py-3 bg-secondary text-white font-bold rounded-2xl text-xs shadow-md">Confirm Top Up</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MAIN CONTENT CANVAS */}
+          <main className="pt-24 pb-safe px-margin-mobile max-w-container-max mx-auto w-full flex-1">
+            {/* SCREEN: HOME DASHBOARD */}
+            {activeTab === 'home' && !decodedPayload && (
+              <div className="space-y-6">
+                {/* Header & Location */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-2xl font-bold text-primary">Hello, {profile.name} 👋</h2>
+                    <p className="text-xs text-on-surface-variant mt-0.5">Where are you paying today?</p>
+                  </div>
+                  <div className="inline-flex items-center gap-2 bg-surface-container-low px-3.5 py-2 rounded-full border border-outline-variant text-on-surface text-xs font-semibold">
+                    <span className="material-symbols-outlined text-[18px]">location_on</span>
+                    <span>Current Destination: Japan 🇯🇵</span>
+                  </div>
+                </div>
+
+                {/* 💳 ULTRA-PERFECT TRAVEL WALLET CARD */}
+                <div className="wallet-card-bg rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden space-y-6">
+                  {/* Card Top Pill */}
+                  <div className="flex justify-between items-center relative z-10">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold">
+                        <span className="material-symbols-outlined text-lg">account_balance_wallet</span>
+                      </div>
+                      <span className="text-xs font-extrabold tracking-wider uppercase text-slate-300">GlobePay Travel Wallet</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border border-emerald-400/30">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                      <span>ACTIVE ACCOUNT</span>
+                    </div>
+                  </div>
+
+                  {/* Main Wallet Balance */}
+                  <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                    <div>
+                      <span className="text-xs text-slate-300 font-medium">Available Travel Balance</span>
+                      <div className="text-3xl sm:text-4xl font-black text-white tracking-tight mt-0.5">
+                        {formatCurrency(wallet.balanceHomeCurrency, profile.homeCurrency)}
+                      </div>
+                    </div>
+
+                    {/* Daily Budget Progress Pill */}
+                    <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/10 text-xs min-w-[180px]">
+                      <div className="flex justify-between text-[11px] mb-1">
+                        <span className="text-slate-300">Daily Travel Limit</span>
+                        <span className="font-bold text-white">{spentPercent}% used</span>
+                      </div>
+                      <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
+                        <div className="bg-gradient-to-r from-blue-400 to-emerald-400 h-full rounded-full" style={{ width: `${spentPercent}%` }}></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Multi-Currency Balances Bar */}
+                  <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-2 bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/10 text-xs">
+                    {wallet.multiCurrencyHoldings.map(h => (
+                      <div key={h.currency} className="space-y-0.5">
+                        <span className="text-[10px] text-slate-300 flex items-center gap-1">
+                          <span>{h.flag}</span>
+                          <span>{h.currency}</span>
+                        </span>
+                        <div className="font-bold text-white text-xs">{formatCurr(h.amount, h.currency)}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Wallet Actions */}
+                  <div className="relative z-10 flex flex-wrap items-center gap-3 pt-1">
+                    <button onClick={() => setActiveTab('scan')} className="flex-1 py-3.5 bg-secondary hover:bg-blue-600 text-white font-extrabold rounded-2xl text-xs shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition active:scale-95">
+                      <span className="material-symbols-outlined text-lg">photo_camera</span>
+                      <span>Scan Payment QR</span>
+                    </button>
+                    <button onClick={() => setShowAddCashModal(true)} className="px-5 py-3.5 bg-white/15 hover:bg-white/25 text-white font-bold rounded-2xl text-xs border border-white/20 transition">
+                      + Top Up Wallet
+                    </button>
+                  </div>
+                </div>
+
+                {/* Exchange Ticker & Spent Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white p-5 rounded-3xl border border-outline-variant shadow-sm flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-on-surface-variant uppercase">Spent Today</span>
+                      <div className="text-xl font-extrabold text-primary mt-1">{formatCurr(wallet.spentTodayHomeCurrency, profile.homeCurrency)}</div>
+                      <span className="text-[10px] text-on-tertiary-container font-semibold">Saved ~{formatCurr(wallet.savedFxHomeCurrency, profile.homeCurrency)} in FX fees</span>
+                    </div>
+                    <span className="material-symbols-outlined text-3xl text-secondary">trending_up</span>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-3xl border border-outline-variant shadow-sm flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-on-surface-variant uppercase">Live FX Rate</span>
+                      <div className="text-xl font-extrabold text-primary mt-1">JPY → {profile.homeCurrency}</div>
+                      <div className="text-xs font-bold text-secondary">1 JPY ≈ {formatCurr(getFxRate('JPY', profile.homeCurrency), profile.homeCurrency)}</div>
+                    </div>
+                    <span className="text-[10px] bg-surface-container px-2 py-1 rounded font-mono text-on-surface-variant">Live FX API</span>
+                  </div>
+                </div>
+
+                {/* Recent Scans List */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-outline-variant space-y-4">
+                  <div className="flex items-center justify-between border-b border-surface-variant pb-3">
+                    <h3 className="text-lg font-bold text-primary">Recent Scans</h3>
+                    <button onClick={() => setActiveTab('activity')} className="text-xs font-semibold text-secondary hover:underline">View All</button>
+                  </div>
+
+                  <div className="divide-y divide-surface-variant">
+                    {scans.map(s => (
+                      <div key={s.id} onClick={() => setActiveTab('activity')} className="py-3.5 flex items-center justify-between hover:bg-surface-container-low transition cursor-pointer">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{s.countryFlag}</span>
+                          <div>
+                            <p className="font-bold text-sm text-on-surface">{s.merchantName}</p>
+                            <p className="text-xs text-on-surface-variant">{s.network} • {new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-sm text-on-surface">{formatCurr(s.originalAmount, s.originalCurrency)}</p>
+                          <p className="text-xs font-semibold text-secondary">≈ {formatCurr(s.totalEstimatedCost, s.homeCurrency)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SCREEN: REAL CAMERA SCANNER */}
+            {activeTab === 'scan' && !decodedPayload && (
+              <div className="max-w-md mx-auto text-center space-y-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-primary">Scan Payment QR</h1>
+                  <p className="text-xs text-on-surface-variant mt-1">Position the QR code inside the frame</p>
+                </div>
+
+                <div className="relative bg-black rounded-3xl overflow-hidden aspect-square w-full flex items-center justify-center shadow-xl">
+                  <video ref={videoRef} className={`w-full h-full object-cover ${cameraState === 'ACTIVE' ? 'opacity-100' : 'opacity-0'}`} playsInline muted></video>
+
+                  {cameraState === 'ACTIVE' && (
+                    <div className="absolute inset-0 flex items-center justify-center p-8 pointer-events-none">
+                      <div className="relative w-56 h-56 rounded-xl overflow-hidden">
+                        <div className="corner corner-tl"></div>
+                        <div className="corner corner-tr"></div>
+                        <div className="corner corner-bl"></div>
+                        <div className="corner corner-br"></div>
+                        <div className="scan-line rounded-full z-30"></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {cameraState === 'INITIALIZING' && (
+                    <div className="text-white text-xs space-y-2">
+                      <div className="w-8 h-8 border-2 border-secondary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                      <p>Starting rear camera feed...</p>
+                    </div>
+                  )}
+
+                  {(cameraState === 'PERMISSION_DENIED' || cameraState === 'UNAVAILABLE') && (
+                    <div className="p-6 text-white text-center space-y-3 bg-black inset-0 absolute flex flex-col justify-center items-center">
+                      <p className="text-xs text-rose-300">{camError}</p>
+                      <button onClick={() => window.location.reload()} className="px-4 py-2 bg-secondary text-white rounded-xl text-xs font-bold">Try Again</button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  <button onClick={handleToggleCameraFacing} className="px-4 py-2.5 rounded-2xl bg-[#00050e] text-white text-xs font-bold shadow flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm">cameraswitch</span>
+                    <span>Switch Cam</span>
+                  </button>
+
+                  <label className="cursor-pointer px-4 py-2.5 rounded-2xl bg-white hover:bg-surface-container text-on-surface text-xs font-bold border border-outline-variant shadow-sm flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm">image</span>
+                    <span>Upload Image</span>
+                    <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                  </label>
+
+                  <button onClick={() => setShowPresets(!showPresets)} className="px-3.5 py-2.5 rounded-2xl bg-secondary-container/10 text-secondary-container text-xs font-bold border border-secondary-container/20">
+                    Presets
+                  </button>
+                </div>
+
+                {showPresets && (
+                  <div className="bg-white rounded-2xl p-4 shadow-sm border border-outline-variant space-y-2 text-left">
+                    <h4 className="font-bold text-xs text-primary">Test Sample Payment QRs</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {SAMPLE_QRS.map(sq => (
+                        <button key={sq.id} onClick={() => setDecodedPayload(parseQR(sq.payload))} className="p-2.5 rounded-xl border border-outline-variant hover:bg-surface-container text-left">
+                          <div className="text-sm">{sq.flag}</div>
+                          <div className="font-bold text-xs text-primary truncate">{sq.label}</div>
+                          <div className="text-[10px] text-on-surface-variant">{sq.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* SCREEN: QR DETECTION */}
+            {decodedPayload && confirmedAmount === null && (
+              <div className="max-w-md mx-auto bg-white rounded-3xl p-6 shadow-sm border border-outline-variant space-y-5">
+                {decodedPayload.type === 'UNSUPPORTED_PAYMENT_QR' || decodedPayload.type === 'NON_PAYMENT_QR' ? (
+                  <div className="text-center space-y-4">
+                    <span className="text-xs font-bold bg-amber-50 text-amber-700 px-3 py-1 rounded-full uppercase">Unsupported QR</span>
+                    <h2 className="text-lg font-bold text-primary">We couldn't identify this as a supported payment QR.</h2>
+                    <div className="bg-surface-container p-3 rounded-xl text-xs font-mono break-all text-on-surface-variant">{decodedPayload.rawText}</div>
+                    <button onClick={() => setDecodedPayload(null)} className="w-full py-3 bg-secondary text-white rounded-2xl text-xs font-bold">Scan Another QR</button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2 border-b border-surface-variant pb-3">
+                      <span className="text-2xl">{decodedPayload.countryFlag}</span>
+                      <div>
+                        <span className="text-[10px] font-bold text-on-tertiary-container bg-tertiary-fixed/30 px-2 py-0.5 rounded-full">{decodedPayload.type === 'UPI_QR' ? '🇮🇳 UPI QR Detected' : 'Payment QR Detected'}</span>
+                        <h2 className="text-base font-bold text-primary">{decodedPayload.network}</h2>
+                      </div>
+                    </div>
+
+                    <div className="bg-surface-container-low p-4 rounded-2xl space-y-2 text-xs">
+                      <div className="flex justify-between"><span className="text-on-surface-variant">Merchant</span><span className="font-bold text-primary">{decodedPayload.merchantName || 'Not specified in QR'}</span></div>
+                      <div className="flex justify-between"><span className="text-on-surface-variant">Merchant Identifier</span><span className="font-mono text-on-surface">{decodedPayload.merchantId || 'Not specified in QR'}</span></div>
+                      <div className="flex justify-between"><span className="text-on-surface-variant">Currency</span><span className="font-bold text-primary">{decodedPayload.currency || 'Not specified'}</span></div>
+                      <div className="flex justify-between"><span className="text-on-surface-variant">Encoded Amount</span><span className="font-extrabold text-primary">{decodedPayload.amount ? `${decodedPayload.currency} ${decodedPayload.amount}` : 'Not specified in QR'}</span></div>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-xs text-on-surface block mb-1">Confirm Payment Amount ({decodedPayload.currency || 'JPY'})</label>
+                      <input type="number" defaultValue={decodedPayload.amount || 10000} id="amtInput" className="w-full p-3 rounded-2xl bg-surface-container-low border border-outline-variant text-lg font-bold text-primary" />
+                    </div>
+
+                    <button onClick={() => {
+                      const v = parseFloat(document.getElementById('amtInput').value);
+                      if (v > 0) setConfirmedAmount(v);
+                    }} className="w-full py-4 bg-secondary text-white rounded-2xl font-bold text-sm shadow-md">
+                      Calculate Conversion & Fees
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* SCREEN: PAYMENT DETAILS */}
+            {decodedPayload && confirmedAmount !== null && (
+              <div className="max-w-md mx-auto bg-white rounded-3xl p-6 shadow-sm border border-outline-variant space-y-6">
+                <div className="flex justify-between items-start border-b border-surface-variant pb-4">
+                  <div>
+                    <h1 className="text-xl font-bold text-primary mb-1">{decodedPayload.merchantName || 'Tokyo Ramen'}</h1>
+                    <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
+                      <span className="material-symbols-outlined text-sm">location_on</span>
+                      <span>{decodedPayload.country || 'Japan'}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-on-surface-variant mt-1">
+                      <span className="material-symbols-outlined text-sm">qr_code</span>
+                      <span>{decodedPayload.network}</span>
+                    </div>
+                  </div>
+                  <span className="bg-primary-container/10 border border-primary-container/20 text-primary-container px-3 py-1 rounded-full text-xs font-semibold">Verified Merchant</span>
+                </div>
+
+                {/* Main Financial Card */}
+                <div className="bg-surface-container-lowest rounded-2xl border border-surface-variant p-5 shadow-sm space-y-4">
+                  <div className="flex justify-between items-center pb-3 border-b border-surface-variant text-xs">
+                    <span className="text-on-surface-variant">Original Amount</span>
+                    <span className="font-bold text-primary text-base">{formatCurr(confirmedAmount, decodedPayload.currency || 'JPY')}</span>
+                  </div>
+
+                  <div className="bg-surface-container-low rounded-xl p-4 border border-surface-variant space-y-1">
+                    <span className="text-xs font-bold text-secondary-container uppercase flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">autorenew</span>
+                      Your Estimated Cost ({profile.homeCurrency})
+                    </span>
+                    <div className="text-2xl font-extrabold text-secondary-container">
+                      ≈ {formatCurr(
+                        (confirmedAmount * getFxRate(decodedPayload.currency || 'JPY', profile.homeCurrency)) +
+                        ((decodedPayload.currency || 'JPY').toUpperCase() === profile.homeCurrency.toUpperCase() ? 0 : (confirmedAmount * getFxRate(decodedPayload.currency || 'JPY', profile.homeCurrency) * 0.0125) + 30),
+                        profile.homeCurrency
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fee Breakdown Card */}
+                <div className="bg-surface-container-lowest rounded-2xl border border-surface-variant p-5 shadow-sm space-y-3 text-xs">
+                  <h3 className="font-bold text-primary mb-2">Estimated Breakdown</h3>
+                  <div className="flex justify-between text-on-surface-variant">
+                    <span>Exchange Rate</span>
+                    <span className="font-semibold text-primary">1 {decodedPayload.currency || 'JPY'} = {getFxRate(decodedPayload.currency || 'JPY', profile.homeCurrency)} {profile.homeCurrency}</span>
+                  </div>
+                  <div className="flex justify-between text-on-surface-variant">
+                    <span>Est. FX Fee (1.25%)</span>
+                    <span>{formatCurr(confirmedAmount * getFxRate(decodedPayload.currency || 'JPY', profile.homeCurrency) * 0.0125, profile.homeCurrency)}</span>
+                  </div>
+                  <div className="flex justify-between text-on-surface-variant pb-2 border-b border-surface-variant">
+                    <span>Est. Service Fee</span>
+                    <span>{formatCurr(30, profile.homeCurrency)}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <button onClick={() => setShowExecutionModal(true)} className="w-full h-14 bg-secondary-container text-white font-bold rounded-2xl text-sm shadow-md">Open Payment Method</button>
+                  <button onClick={handleSaveCompleteScan} className="w-full h-14 bg-transparent border border-outline-variant text-primary font-bold rounded-2xl text-xs">Deduct & Save to History</button>
+                </div>
+              </div>
+            )}
+
+            {/* SCREEN: ACTIVITY LOG */}
+            {activeTab === 'activity' && !decodedPayload && (
+              <div className="space-y-4">
+                <h1 className="text-2xl font-extrabold text-primary">Scan History</h1>
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-outline-variant divide-y divide-surface-variant">
+                  {scans.map(s => (
+                    <div key={s.id} className="py-3 flex items-center justify-between text-xs">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">{s.countryFlag}</span>
+                        <div>
+                          <h4 className="font-bold text-sm text-primary">{s.merchantName}</h4>
+                          <span className="text-[10px] text-on-surface-variant">{s.country} • {s.network}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-primary">{formatCurr(s.originalAmount, s.originalCurrency)}</div>
+                        <div className="font-bold text-secondary">≈ {formatCurr(s.totalEstimatedCost, s.homeCurrency)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SCREEN: PROFILE */}
+            {activeTab === 'profile' && !decodedPayload && (
+              <div className="space-y-4">
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-outline-variant space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center font-bold text-xl">{profile.name.charAt(0)}</div>
+                    <div>
+                      <h2 className="font-extrabold text-lg text-primary">{profile.name}</h2>
+                      <p className="text-xs text-on-surface-variant">{profile.email} • {profile.countryFlag} {profile.homeCurrency}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => { localStorage.removeItem('globepay_user_profile'); setProfile(null); }} className="w-full py-3 bg-error-container text-on-error-container font-bold rounded-2xl text-xs border border-error/20">Sign Out</button>
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* AUTHORIZATION MODAL */}
+          {showExecutionModal && (
+            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
+                <div className="w-12 h-12 bg-secondary-fixed text-on-secondary-fixed rounded-full flex items-center justify-center mx-auto font-bold text-xl">✓</div>
+                <h3 className="font-extrabold text-lg text-primary">Payment Authorized</h3>
+                <p className="text-xs text-on-surface-variant">Merchant QR payload decoded and verified successfully. Converted cost updated in wallet.</p>
+                <button onClick={handleSaveCompleteScan} className="w-full py-3 bg-primary text-white rounded-2xl font-bold text-xs">Complete Transaction</button>
+              </div>
+            </div>
+          )}
+
+          {/* BottomNavBar */}
+          <nav className="bg-surface-container-lowest shadow-lg fixed bottom-0 w-full z-50 rounded-t-2xl border-t border-outline-variant pb-safe md:hidden">
+            <div className="flex justify-around items-center px-4 py-2">
+              <button onClick={() => { setDecodedPayload(null); setActiveTab('home'); }} className={`flex flex-col items-center text-xs font-semibold p-1 ${activeTab === 'home' ? 'text-secondary font-bold' : 'text-on-surface-variant'}`}>
+                <span className="material-symbols-outlined text-2xl">home</span>
+                <span className="text-[10px]">Home</span>
+              </button>
+
+              <button onClick={() => { setDecodedPayload(null); setActiveTab('scan'); }} className="flex flex-col items-center justify-center bg-secondary text-white rounded-full p-2 w-12 h-12 shadow-lg -mt-5">
+                <span className="material-symbols-outlined text-2xl">photo_camera</span>
+              </button>
+
+              <button onClick={() => { setDecodedPayload(null); setActiveTab('activity'); }} className={`flex flex-col items-center text-xs font-semibold p-1 ${activeTab === 'activity' ? 'text-secondary font-bold' : 'text-on-surface-variant'}`}>
+                <span className="material-symbols-outlined text-2xl">receipt_long</span>
+                <span className="text-[10px]">Activity</span>
+              </button>
+
+              <button onClick={() => { setDecodedPayload(null); setActiveTab('profile'); }} className={`flex flex-col items-center text-xs font-semibold p-1 ${activeTab === 'profile' ? 'text-secondary font-bold' : 'text-on-surface-variant'}`}>
+                <span className="material-symbols-outlined text-2xl">person</span>
+                <span className="text-[10px]">Profile</span>
+              </button>
+            </div>
+          </nav>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<GlobePayApp />);
+  </script>
+</body>
+</html>
